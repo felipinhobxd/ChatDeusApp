@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ChatDeusApp</title><link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="panel-page">
+  <main class="shell">
+    <header class="hero"><div><p class="eyebrow">CONTROLE DO CHAT</p><h1>ChatDeusApp</h1><p class="muted">Escolha jogadores, configure vozes e use o chat da Twitch como personagem com TTS.</p></div><div class="status-group"><span class="status-pill" id="status-twitch">Twitch</span><span class="status-pill" id="status-azure">Azure</span><span class="status-pill" id="status-obs">OBS</span></div></header>
+    <section class="toolbar"><div><strong>Overlay para OBS</strong><code id="overlay-url">{{ overlay_url }}</code></div><button class="secondary" onclick="copyOverlay()">Copiar URL</button><a class="secondary button-link" href="/overlay" target="_blank">Abrir overlay</a></section>
+    <section class="players-grid">
+      {% for number in [1, 2, 3] %}<article class="player-card" data-player="{{ number }}"><div class="player-head"><div><p class="eyebrow">JOGADOR {{ number }}</p><h2 id="user-{{ number }}">Aguardando...</h2></div><label class="switch-line"><input type="checkbox" id="tts-{{ number }}" checked onchange="setTTS({{ number }}, this.checked)"><span>TTS</span></label></div><p class="message" id="message-{{ number }}">Nenhuma mensagem ainda.</p><p class="pool">Fila: <strong id="pool-{{ number }}">0</strong> · comando <code id="command-{{ number }}"></code></p><form class="choose-row" onsubmit="chooseUser(event, {{ number }})"><input id="choose-{{ number }}" autocomplete="off" placeholder="nome do usuário"><button type="submit">Escolher</button></form><button class="secondary wide" onclick="pickRandom({{ number }})">Sortear da fila</button><div class="select-grid"><label>Voz<select id="voice-{{ number }}" onchange="setVoice({{ number }}, this.value)">{% for value, label in voices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>Estilo<select id="style-{{ number }}" onchange="setStyle({{ number }}, this.value)">{% for value, label in styles %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></div></article>{% endfor %}
+    </section>
+    <section class="help-card"><h3>Como usar</h3><p>Os espectadores entram nas filas usando <code>!jogador1</code>, <code>!jogador2</code> ou <code>!jogador3</code> (ou os comandos personalizados no launcher). Quando um jogador selecionado escreve no chat, a mensagem aparece aqui e é lida em voz alta.</p><p>Prefixos de emoção aceitos incluem <code>(bravo)</code>, <code>(alegre)</code>, <code>(animado)</code>, <code>(triste)</code>, <code>(gritando)</code>, <code>(sussurro)</code> e <code>(aleatorio)</code>.</p></section>
+  </main><script src="{{ url_for('static', filename='app.js') }}"></script>
+</body></html>

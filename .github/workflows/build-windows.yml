@@ -1,0 +1,64 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-build:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Build executable
+        run: pyinstaller ChatDeusApp.spec --noconfirm --clean
+      - name: Smoke test executable
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath ".\dist\ChatDeusApp.exe" -ArgumentList "--smoke-test" -PassThru -Wait
+          if ($process.ExitCode -ne 0) { throw "Smoke test failed with exit code $($process.ExitCode)" }
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChatDeusApp-Windows
+          path: dist/ChatDeusApp.exe
+          if-no-files-found: error
+      - name: Publish GitHub Release
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content VERSION).Trim()
+          $tag = "v$version"
+          $asset = "dist/ChatDeusApp.exe"
+          $notes = @"
+          Primeira versão pública do ChatDeusApp.
+
+          - Interface desktop em PT-BR
+          - Twitch configurável pela UI
+          - Azure TTS + fallback gTTS
+          - Vozes brasileiras
+          - OBS opcional e tolerante a falhas
+          - Painel e overlay para até 3 jogadores
+          - Build Windows em arquivo único
+          "@
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) { gh release upload $tag $asset --clobber }
+          else { gh release create $tag $asset --target "${{ github.sha }}" --title "ChatDeusApp $tag" --notes $notes }

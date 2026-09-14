@@ -1,0 +1,4 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ChatDeusApp — Overlay</title><link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}"></head>
+<body class="overlay-page"><main class="overlay-grid">{% for number in [1, 2, 3] %}<section class="overlay-player"><h2 id="user-{{ number }}">Jogador {{ number }}</h2><p id="message-{{ number }}">Aguardando mensagem...</p></section>{% endfor %}</main>
+<script>async function refreshOverlay(){try{const r=await fetch('/api/state',{cache:'no-store'});const d=await r.json();for(const n of ['1','2','3']){const p=d.players[n];document.getElementById('user-'+n).textContent=p.user||('Jogador '+n);document.getElementById('message-'+n).textContent=p.message||'Aguardando mensagem...';}}catch(_){}}refreshOverlay();setInterval(refreshOverlay,400);</script></body></html>

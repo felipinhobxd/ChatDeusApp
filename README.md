@@ -4,65 +4,48 @@ Uma adaptação em português do conceito do **ChatGodApp**, feita para abrir co
 
 > Baseado em [DougDougGithub/ChatGodApp](https://github.com/DougDougGithub/ChatGodApp), licenciado sob MIT. Consulte [NOTICE.md](NOTICE.md) e [LICENSE](LICENSE).
 
-## O que mudou
+## Novidades da v1.1.0
 
-- interface desktop em **PT-BR** para configurar tudo;
-- canal e token da Twitch configuráveis pela UI;
-- Microsoft Azure TTS configurável pela UI;
-- vozes brasileiras por padrão;
-- fallback automático para **gTTS em português** quando o Azure não estiver disponível;
-- OBS WebSocket opcional — se o OBS estiver fechado, o app continua funcionando;
-- painel moderno para escolher/sortear até 3 jogadores;
-- overlay transparente dedicado para usar como **Browser Source** no OBS;
-- comandos em português (`!jogador1`, `!jogador2`, `!jogador3`) e compatibilidade com `!player1/2/3`;
-- fila de áudio para evitar TTS sobreposto;
-- configuração persistida no `%APPDATA%\ChatDeusApp\config.json`;
-- testes automatizados e build do `.exe` pelo GitHub Actions.
+- **personagens animados no overlay**: escolha uma imagem para cada jogador diretamente no `.exe`;
+- PNG, JPG, WebP e GIF copiados para `%APPDATA%\ChatDeusApp\characters`;
+- tamanho, intensidade, posição X/Y e espelhamento configuráveis;
+- movimento automático conforme `(bravo)`, `(animado)`, `(sussurro)` e outros estilos;
+- atualização em tempo real do overlay via SSE;
+- uma única **Fonte de Navegador** no OBS mostra imagens, nomes e mensagens;
+- OBS WebSocket continua opcional para filtros/efeitos avançados.
 
-## Instalação mais fácil
+## Instalação
 
-Baixe `ChatDeusApp.exe` na seção **Releases**, abra e preencha as configurações na tela.
+Baixe `ChatDeusApp.exe` em **Releases** e abra normalmente.
+
+### Personagens animados
+
+1. Abra a aba **Personagens** no ChatDeusApp.
+2. Em Jogador 1/2/3 clique em **Escolher...** e selecione PNG, JPG, WebP ou GIF.
+3. Ajuste tamanho, intensidade, posição X/Y e espelhamento.
+4. Em **Falando**, deixe `auto` para o movimento acompanhar o estilo da fala.
+5. Inicie o ChatDeusApp e copie a URL `/overlay` mostrada no painel.
+6. No OBS, adicione **uma única Fonte de Navegador** com essa URL.
+
+Não é necessário instalar plugin para a animação básica. O navegador do OBS recebe quando o TTS começa/termina e anima o personagem.
 
 ### Twitch
 
-1. Informe o nome do seu canal.
-2. Cole um token OAuth com permissão para ler o chat.
-3. Clique em **Salvar configurações**.
+Informe o canal e um token OAuth com permissão para ler o chat. Espectadores entram nas filas com `!jogador1`, `!jogador2` ou `!jogador3` (também aceita `!player1/2/3`).
 
-O ChatDeusApp não inclui nem envia credenciais para o repositório. Elas ficam no arquivo local do seu perfil do Windows.
+### Voz
 
-### Microsoft Azure TTS
+O Azure TTS é opcional e pode ser configurado pela UI. O fallback gTTS em português continua disponível quando habilitado.
 
-O Azure é opcional. Para usar:
+### OBS WebSocket
 
-1. crie um recurso de Speech no Microsoft Azure;
-2. copie a **chave** e a **região**;
-3. cole os dois valores na aba **Conexões**;
-4. escolha entre várias vozes `pt-BR` disponíveis no painel;
-5. deixe o fallback gTTS ativado para continuar falando se o Azure falhar.
+É opcional. Use apenas se quiser ligar/desligar filtros adicionais no OBS durante a fala. Se o OBS estiver fechado, o ChatDeusApp continua funcionando.
 
-Sem Azure, o fallback gTTS pode funcionar normalmente, desde que o computador tenha acesso à internet.
+## Emoções
 
-### OBS
-
-A integração com OBS é opcional. No OBS 28+:
-
-1. habilite o servidor WebSocket;
-2. informe host, porta e senha no launcher;
-3. opcionalmente configure a fonte de áudio e um filtro para cada jogador;
-4. adicione uma **Fonte de Navegador** apontando para o endereço `/overlay` mostrado pelo ChatDeusApp.
-
-Se o OBS não estiver aberto, o ChatDeusApp não fecha nem trava.
-
-## Uso
-
-Espectadores entram em uma fila digitando `!jogador1`, `!jogador2` ou `!jogador3`. No painel você pode sortear alguém da fila ou escolher um usuário manualmente. Mensagens dos jogadores escolhidos aparecem no painel/overlay e, com TTS ativo, são faladas.
-
-Prefixos de emoção suportados incluem `(bravo)`, `(alegre)`, `(animado)`, `(esperançoso)`, `(triste)`, `(gritando)`, `(assustado)`, `(sussurro)` e `(aleatorio)`.
+Prefixos suportados incluem `(bravo)`, `(alegre)`, `(animado)`, `(esperançoso)`, `(triste)`, `(gritando)`, `(assustado)`, `(sussurro)` e `(aleatorio)`.
 
 ## Desenvolvimento
-
-Recomendado: Python 3.11 ou 3.12.
 
 ```powershell
 py -m venv .venv
@@ -72,7 +55,7 @@ python -m unittest discover -s tests -v
 python chatdeus_app.py
 ```
 
-Build local:
+Build:
 
 ```powershell
 pyinstaller ChatDeusApp.spec --noconfirm --clean

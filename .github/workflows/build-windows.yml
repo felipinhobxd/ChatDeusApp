@@ -49,15 +49,15 @@ jobs:
           $tag = "v$version"
           $asset = "dist/ChatDeusApp.exe"
           $notes = @"
-          Primeira versão pública do ChatDeusApp.
+          ChatDeusApp $tag
 
-          - Interface desktop em PT-BR
-          - Twitch configurável pela UI
-          - Azure TTS + fallback gTTS
-          - Vozes brasileiras
-          - OBS opcional e tolerante a falhas
-          - Painel e overlay para até 3 jogadores
-          - Build Windows em arquivo único
+          - Personagens animados por imagem no overlay do OBS
+          - Upload pela UI para Jogador 1, 2 e 3
+          - Tamanho, posição, intensidade e espelhamento
+          - Movimento automático conforme emoção/TTS
+          - Atualização em tempo real via Fonte de Navegador
+          - OBS WebSocket continua opcional
+          - Interface e vozes em PT-BR
           "@
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) { gh release upload $tag $asset --clobber }

@@ -51,14 +51,13 @@ jobs:
           $notes = @"
           ChatDeusApp $tag
 
-          - Botão Entrar com Twitch: sem copiar OAuth token
-          - Device Code Flow oficial para cliente público, sem Client Secret
-          - Canal detectado automaticamente pela conta conectada
-          - Refresh token automático e validação periódica da sessão
-          - Chat moderno via EventSub WebSocket
-          - Modo manual antigo preservado como compatibilidade
-          - Personagens animados no overlay do OBS
-          - Interface e vozes em PT-BR
+          - 1, 2 ou 3 jogadores configuráveis
+          - Microsoft Edge TTS grátis, sem chave/créditos
+          - Emoções por velocidade, tom e volume
+          - Áudio direto pela Fonte de Navegador e Mixer do OBS
+          - Fallback automático para alto-falantes quando o OBS estiver fechado
+          - OBS WebSocket não é mais necessário para o fluxo normal
+          - Login Twitch automático e personagens animados preservados
           "@
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) { gh release upload $tag $asset --clobber }

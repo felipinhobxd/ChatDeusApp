@@ -16,11 +16,19 @@ log = logging.getLogger(__name__)
 class AudioWorker:
     """Fila única para evitar falas simultâneas e manter a ordem do chat."""
 
-    def __init__(self, tts: TTSManager, state: PlayerManager, before_play: Callable[[int], None] | None = None, after_play: Callable[[int], None] | None = None):
+    def __init__(
+        self,
+        tts: TTSManager,
+        state: PlayerManager,
+        before_play: Callable[[int], None] | None = None,
+        after_play: Callable[[int], None] | None = None,
+        play_audio: Callable[[int, Path], None] | None = None,
+    ):
         self.tts = tts
         self.state = state
         self.before_play = before_play
         self.after_play = after_play
+        self.play_audio = play_audio
         self._queue: queue.Queue[tuple[int, str] | None] = queue.Queue(maxsize=100)
         self._thread = threading.Thread(target=self._run, name="chatdeus-audio", daemon=True)
         self._started = False
@@ -31,7 +39,7 @@ class AudioWorker:
             self._thread.start()
 
     def enqueue(self, player: int, text: str) -> bool:
-        if not text.strip():
+        if not text.strip() or not self.state.is_active(player):
             return False
         self.start()
         try:
@@ -47,14 +55,18 @@ class AudioWorker:
             if item is None:
                 return
             player, text = item
+            path: Path | None = None
             try:
                 current = self.state.players[player]
-                audio_path = self.tts.synthesize(text, current.voice, current.style)
-                if not audio_path:
+                path = self.tts.synthesize(text, current.voice, current.style)
+                if not path:
                     continue
                 if self.before_play:
                     self.before_play(player)
-                self._play(audio_path)
+                if self.play_audio:
+                    self.play_audio(player, path)
+                else:
+                    self._play(path)
             except Exception:
                 log.exception("Erro reproduzindo TTS.")
             finally:
@@ -63,11 +75,17 @@ class AudioWorker:
                         self.after_play(player)
                     except Exception:
                         log.exception("Erro ao finalizar integração com OBS.")
+                if path:
+                    try:
+                        path.unlink(missing_ok=True)
+                    except OSError:
+                        log.debug("Não foi possível apagar arquivo temporário %s", path)
                 self._queue.task_done()
 
     @staticmethod
     def _play(path: Path) -> None:
         import pygame
+
         try:
             if not pygame.mixer.get_init():
                 pygame.mixer.init()
@@ -81,7 +99,3 @@ class AudioWorker:
                 pygame.mixer.music.unload()
             except Exception:
                 pass
-            try:
-                path.unlink(missing_ok=True)
-            except OSError:
-                log.debug("Não foi possível apagar arquivo temporário %s", path)

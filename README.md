@@ -1,65 +1,54 @@
 # ChatDeusApp 🇧🇷
 
-Uma adaptação em português do conceito do **ChatGodApp**, feita para abrir como aplicativo Windows com interface gráfica — sem precisar editar Python, procurar OAuth token manualmente ou configurar tudo por variáveis de ambiente.
+Aplicativo Windows para transformar pessoas do chat da Twitch em personagens com TTS e overlay animado no OBS. Baseado no conceito do [DougDougGithub/ChatGodApp](https://github.com/DougDougGithub/ChatGodApp), mantendo a licença MIT e os avisos do projeto original.
 
-> Baseado em [DougDougGithub/ChatGodApp](https://github.com/DougDougGithub/ChatGodApp), licenciado sob MIT. Consulte [NOTICE.md](NOTICE.md) e [LICENSE](LICENSE).
+## v1.3.0 — OBS fácil + TTS grátis
 
-## Novidades da v1.2.0
+- escolha **1, 2 ou 3 jogadores**;
+- **Microsoft Edge TTS** como voz padrão: vozes neurais pt-BR, sem chave e sem créditos;
+- emoções gratuitas por prosódia: `(bravo)`, `(alegre)`, `(animado)`, `(triste)`, `(gritando)`, `(assustado)`, `(sussurro)` etc.;
+- gTTS continua como fallback gratuito;
+- Azure virou totalmente opcional;
+- **áudio direto pela Fonte de Navegador do OBS**: o TTS aparece no Mixer do OBS;
+- se o OBS estiver fechado, o app pode tocar automaticamente nos alto-falantes do PC;
+- OBS WebSocket continua disponível apenas para filtros/efeitos avançados e não é necessário para áudio/personagens;
+- login Twitch automático por Device Code Flow continua sem Client Secret;
+- personagens PNG/JPG/WebP/GIF continuam animados e sincronizados com a fala.
 
-- **Entrar com Twitch** diretamente pelo aplicativo;
-- login oficial por Device Code Flow para cliente público, sem Client Secret no `.exe`;
-- navegador abre automaticamente para autorizar a conta;
-- canal/login detectado automaticamente;
-- access token validado e refresh token renovado automaticamente;
-- leitura do chat por **EventSub WebSocket**;
-- `user:read:chat` como única permissão pedida pelo fluxo automático;
-- modo antigo de canal + OAuth token preservado apenas para compatibilidade;
-- personagens animados no overlay do OBS continuam disponíveis.
+## Twitch
 
-## Instalação e primeiro uso
+Clique em **Entrar com Twitch**. O navegador abre, você autoriza e o ChatDeusApp detecta a conta/canal automaticamente. O modo manual antigo fica disponível apenas para compatibilidade.
 
-1. Baixe `ChatDeusApp.exe` em **Releases** e abra normalmente.
-2. Clique em **Entrar com Twitch** — ou simplesmente em **Iniciar ChatDeusApp** no primeiro uso.
-3. O navegador abrirá a página oficial da Twitch. Autorize sua conta.
-4. O aplicativo mostrará `Twitch: conectado como @seunome ✓` e configurará o canal automaticamente.
-5. Inicie o ChatDeusApp e use o painel local que será aberto no navegador.
+## Voz sem créditos
 
-Você não precisa criar nem copiar um OAuth token manualmente. O Client ID da aplicação é público; nenhum Client Secret é colocado no executável. Access token e refresh token ficam no arquivo de configuração local do usuário em `%APPDATA%\ChatDeusApp\config.json` e não são enviados ao repositório.
+O modo padrão é `edge` (Microsoft Edge TTS): não pede API key, assinatura Azure ou créditos no ChatDeusApp. Ele precisa de internet e depende do serviço online da Microsoft. O ChatDeusApp aplica velocidade, tom e volume diferentes para cada emoção.
 
-### Compatibilidade com versões antigas
+O modo `gtts` também é gratuito, porém mais simples. `azure` existe só para quem já possui uma chave.
 
-Quem já usava a v1.0/v1.1 com **Canal + Token OAuth** continua funcionando. Esse método fica na seção **Compatibilidade / modo manual** e pode ser desativado assim que você fizer login pelo botão novo.
+## OBS — configuração recomendada
 
-## Como funcionam os jogadores
+1. Abra o ChatDeusApp e deixe **Saída de áudio = browser**.
+2. Clique em **Iniciar ChatDeusApp**.
+3. Na aba **OBS Fácil**, copie a URL do overlay.
+4. No OBS: **Fontes → + → Navegador**.
+5. Cole a URL.
+6. Marque **Controlar áudio via OBS / Control Audio via OBS**.
+7. O ChatDeusApp passa a aparecer no Mixer do OBS; ajuste volume/filtros ali normalmente.
+8. Use **Testar áudio no OBS** para confirmar.
 
-Espectadores entram nas filas com:
+Não precisa configurar OBS WebSocket para isso.
 
-- `!jogador1`
-- `!jogador2`
-- `!jogador3`
+## Jogadores
 
-Também são aceitos `!player1`, `!player2` e `!player3`. No painel você pode sortear alguém da fila ou escolher um usuário manualmente. As mensagens do usuário escolhido aparecem no overlay e podem ser lidas por TTS.
+Na aba **Aplicativo**, defina `Jogadores ativos` como 1, 2 ou 3. Slots desativados desaparecem do painel e do overlay, e os respectivos comandos deixam de entrar em filas.
 
-## Personagens animados no OBS
+Por padrão:
 
-1. Abra a aba **Personagens**.
-2. Em Jogador 1/2/3 clique em **Escolher...** e selecione PNG, JPG, WebP ou GIF.
-3. Ajuste tamanho, intensidade, posição X/Y e espelhamento.
-4. Em **Falando**, deixe `auto` para o movimento acompanhar o estilo da fala.
-5. Copie a URL `/overlay` mostrada no painel.
-6. No OBS, adicione **uma única Fonte de Navegador** usando essa URL.
-
-Não é necessário plugin para a animação básica. O OBS WebSocket continua opcional e serve apenas para filtros/efeitos extras.
-
-## Voz
-
-O Azure TTS é opcional e pode ser configurado pela interface. O fallback gTTS em português continua disponível quando habilitado.
-
-Prefixos de emoção suportados incluem `(bravo)`, `(alegre)`, `(animado)`, `(esperançoso)`, `(triste)`, `(gritando)`, `(assustado)`, `(sussurro)` e `(aleatorio)`.
+- `!jogador1` / `!player1`
+- `!jogador2` / `!player2`
+- `!jogador3` / `!player3`
 
 ## Desenvolvimento
-
-Recomendado: Python 3.11 ou 3.12.
 
 ```powershell
 py -m venv .venv
@@ -69,7 +58,7 @@ python -m unittest discover -s tests -v
 python chatdeus_app.py
 ```
 
-Build local:
+Build:
 
 ```powershell
 pyinstaller ChatDeusApp.spec --noconfirm --clean

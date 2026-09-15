@@ -1,5 +1,6 @@
 Flask>=3.0,<4
 azure-cognitiveservices-speech>=1.37,<2
+edge-tts>=6.1,<8
 gTTS>=2.5,<3
 pygame-ce>=2.5,<3
 twitchio>=2.10,<3

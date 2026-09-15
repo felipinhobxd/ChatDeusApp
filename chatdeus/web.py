@@ -20,12 +20,7 @@ def create_app(runtime) -> Flask:
 
     @app.get("/")
     def panel():
-        return render_template(
-            "index.html",
-            voices=PT_BR_VOICES,
-            styles=VOICE_STYLES,
-            overlay_url=f"{runtime.base_url}/overlay",
-        )
+        return render_template("index.html", voices=PT_BR_VOICES, styles=VOICE_STYLES, overlay_url=runtime.overlay_url)
 
     @app.get("/overlay")
     def overlay():
@@ -40,8 +35,17 @@ def create_app(runtime) -> Flask:
     def api_state():
         data = runtime.state.snapshot()
         data["twitch"] = runtime.twitch.public_status()
-        data["azure"] = {"configured": runtime.tts.azure_ready}
+        data["tts"] = {
+            "provider": runtime.config.tts_provider,
+            "provider_label": runtime.tts.provider_label,
+            "emotion_strength": runtime.config.emotion_strength,
+        }
         data["obs"] = {"enabled": runtime.config.obs_enabled}
+        data["audio"] = {
+            "mode": runtime.config.audio_output,
+            "fallback": runtime.config.browser_audio_fallback,
+            **runtime.browser_audio.public(),
+        }
         data["characters"] = {str(n): runtime.character_public(n) for n in (1, 2, 3)}
         data["version"] = runtime.wait_for_change(-1, timeout=0)
         return jsonify(data)
@@ -58,11 +62,36 @@ def create_app(runtime) -> Flask:
                     yield f"data: {version}\n\n"
                 else:
                     yield ": keepalive\n\n"
-
         response = Response(generate(), mimetype="text/event-stream")
         response.headers["Cache-Control"] = "no-cache"
         response.headers["X-Accel-Buffering"] = "no"
         return response
+
+    @app.post("/api/audio/hello")
+    def audio_hello():
+        runtime.browser_audio.hello()
+        runtime.signal_state_change()
+        return jsonify({"ok": True})
+
+    @app.get("/api/audio/file/<item_id>")
+    def audio_file(item_id: str):
+        path = runtime.browser_audio.file_for(item_id)
+        return send_file(path, conditional=True, max_age=0) if path else ("", 404)
+
+    @app.post("/api/audio/<item_id>/started")
+    def audio_started(item_id: str):
+        ok = runtime.browser_audio.mark_started(item_id)
+        return jsonify({"ok": ok}), 200 if ok else 404
+
+    @app.post("/api/audio/<item_id>/finished")
+    def audio_finished(item_id: str):
+        ok = runtime.browser_audio.mark_finished(item_id)
+        return jsonify({"ok": ok}), 200 if ok else 404
+
+    @app.post("/api/audio/test")
+    def audio_test():
+        ok = runtime.test_audio()
+        return jsonify({"ok": ok}), 200 if ok else 409
 
     @app.post("/api/player/<int:player>/choose")
     def choose(player: int):

@@ -25,36 +25,42 @@ ALLOWED_CHARACTER_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 CHARACTER_MAX_BYTES = 25 * 1024 * 1024
 IDLE_ANIMATIONS = {"none", "float", "breathe"}
 SPEAKING_ANIMATIONS = {"auto", "bounce", "shake", "pulse", "talk", "none"}
+TTS_PROVIDERS = {"edge", "gtts", "azure"}
+AUDIO_OUTPUTS = {"browser", "speakers"}
+EDGE_PT_BR_VOICES = {"pt-BR-AntonioNeural", "pt-BR-FranciscaNeural"}
 
 
 @dataclass
 class AppConfig:
-    # Twitch — login simples (Device Code Flow)
     twitch_access_token: str = ""
     twitch_refresh_token: str = ""
     twitch_user_id: str = ""
     twitch_login: str = ""
     twitch_token_client_id: str = ""
     twitch_scopes: list[str] = field(default_factory=list)
-
-    # Compatibilidade com versões antigas / modo manual
     twitch_manual_mode: bool = False
     twitch_channel: str = ""
     twitch_token: str = ""
 
+    active_players: int = 3
     command_player_1: str = "!jogador1"
     command_player_2: str = "!jogador2"
     command_player_3: str = "!jogador3"
     activity_seconds: int = 450
     max_pool_users: int = 2000
 
-    azure_key: str = ""
-    azure_region: str = ""
-    azure_enabled: bool = True
+    tts_provider: str = "edge"
+    emotion_strength: int = 7
     fallback_gtts: bool = True
     default_voice_1: str = "pt-BR-AntonioNeural"
     default_voice_2: str = "pt-BR-FranciscaNeural"
-    default_voice_3: str = "pt-BR-ThalitaNeural"
+    default_voice_3: str = "pt-BR-AntonioNeural"
+    azure_key: str = ""
+    azure_region: str = ""
+    azure_enabled: bool = False
+
+    audio_output: str = "browser"
+    browser_audio_fallback: bool = True
 
     obs_enabled: bool = False
     obs_host: str = "127.0.0.1"
@@ -102,43 +108,42 @@ class AppConfig:
         self.twitch_user_id = str(self.twitch_user_id).strip()
         self.twitch_login = str(self.twitch_login).strip().lower()
         self.twitch_token_client_id = str(self.twitch_token_client_id).strip()
-        self.twitch_scopes = sorted({str(scope).strip() for scope in (self.twitch_scopes or []) if str(scope).strip()})
+        self.twitch_scopes = sorted({str(x).strip() for x in (self.twitch_scopes or []) if str(x).strip()})
         self.twitch_channel = str(self.twitch_channel).strip().lstrip("#").lower()
         self.twitch_token = str(self.twitch_token).strip()
 
-        self.azure_key = self.azure_key.strip()
-        self.azure_region = self.azure_region.strip()
-        self.obs_host = self.obs_host.strip() or "127.0.0.1"
-        self.web_host = self.web_host.strip() or "127.0.0.1"
+        self.active_players = max(1, min(int(self.active_players), 3))
         self.activity_seconds = max(30, min(int(self.activity_seconds), 86_400))
         self.max_pool_users = max(10, min(int(self.max_pool_users), 50_000))
+        self.tts_provider = str(self.tts_provider).strip().lower()
+        if self.tts_provider not in TTS_PROVIDERS:
+            self.tts_provider = "edge"
+        self.emotion_strength = max(0, min(int(self.emotion_strength), 10))
+        self.audio_output = str(self.audio_output).strip().lower()
+        if self.audio_output not in AUDIO_OUTPUTS:
+            self.audio_output = "browser"
+
+        self.azure_key = str(self.azure_key).strip()
+        self.azure_region = str(self.azure_region).strip()
+        self.obs_host = str(self.obs_host).strip() or "127.0.0.1"
+        self.web_host = str(self.web_host).strip() or "127.0.0.1"
         self.obs_port = max(1, min(int(self.obs_port), 65_535))
         self.web_port = max(1, min(int(self.web_port), 65_535))
 
         commands = [self.command_player_1.strip(), self.command_player_2.strip(), self.command_player_3.strip()]
         defaults = ["!jogador1", "!jogador2", "!jogador3"]
-        self.command_player_1, self.command_player_2, self.command_player_3 = [
-            command or defaults[index] for index, command in enumerate(commands)
-        ]
+        self.command_player_1, self.command_player_2, self.command_player_3 = [c or defaults[i] for i, c in enumerate(commands)]
 
         for player in (1, 2, 3):
             image_key = f"character_image_{player}"
             image_name = str(getattr(self, image_key, "")).strip()
             setattr(self, image_key, Path(image_name).name if image_name else "")
-
-            size_key = f"character_size_{player}"
-            intensity_key = f"character_intensity_{player}"
-            x_key = f"character_x_{player}"
-            y_key = f"character_y_{player}"
-            setattr(self, size_key, max(80, min(int(getattr(self, size_key)), 800)))
-            setattr(self, intensity_key, max(0, min(int(getattr(self, intensity_key)), 10)))
-            setattr(self, x_key, max(-1000, min(int(getattr(self, x_key)), 1000)))
-            setattr(self, y_key, max(-1000, min(int(getattr(self, y_key)), 1000)))
-
+            for suffix, low, high in (("size", 80, 800), ("intensity", 0, 10), ("x", -1000, 1000), ("y", -1000, 1000)):
+                key = f"character_{suffix}_{player}"
+                setattr(self, key, max(low, min(int(getattr(self, key)), high)))
             idle_key = f"character_idle_{player}"
             idle = str(getattr(self, idle_key)).strip().lower()
             setattr(self, idle_key, idle if idle in IDLE_ANIMATIONS else "float")
-
             speaking_key = f"character_speaking_{player}"
             speaking = str(getattr(self, speaking_key)).strip().lower()
             setattr(self, speaking_key, speaking if speaking in SPEAKING_ANIMATIONS else "auto")
@@ -154,7 +159,16 @@ class AppConfig:
     def from_dict(cls, data: dict[str, Any]) -> "AppConfig":
         known = set(cls.__dataclass_fields__.keys()) - {"extra"}
         values = {key: data[key] for key in known if key in data}
-        # Migração 1.0/1.1: canal + token antigos passam a habilitar explicitamente o modo manual.
+        if data and "active_players" not in data:
+            values["active_players"] = 3
+        migrated_to_edge = "tts_provider" not in data and not (data.get("azure_enabled") and data.get("azure_key"))
+        if "tts_provider" not in data:
+            values["tts_provider"] = "azure" if data.get("azure_enabled") and data.get("azure_key") else "edge"
+        if migrated_to_edge:
+            for player, fallback in ((1, "pt-BR-AntonioNeural"), (2, "pt-BR-FranciscaNeural"), (3, "pt-BR-AntonioNeural")):
+                key = f"default_voice_{player}"
+                if str(values.get(key, fallback)) not in EDGE_PT_BR_VOICES:
+                    values[key] = fallback
         if (
             "twitch_manual_mode" not in data
             and data.get("twitch_channel")

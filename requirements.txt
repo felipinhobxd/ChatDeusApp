@@ -4,3 +4,5 @@ gTTS>=2.5,<3
 pygame-ce>=2.5,<3
 twitchio>=2.10,<3
 obs-websocket-py>=1.0,<2
+requests>=2.32,<3
+websocket-client>=1.8,<2

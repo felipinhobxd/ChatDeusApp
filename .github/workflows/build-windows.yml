@@ -51,12 +51,13 @@ jobs:
           $notes = @"
           ChatDeusApp $tag
 
-          - Personagens animados por imagem no overlay do OBS
-          - Upload pela UI para Jogador 1, 2 e 3
-          - Tamanho, posição, intensidade e espelhamento
-          - Movimento automático conforme emoção/TTS
-          - Atualização em tempo real via Fonte de Navegador
-          - OBS WebSocket continua opcional
+          - Botão Entrar com Twitch: sem copiar OAuth token
+          - Device Code Flow oficial para cliente público, sem Client Secret
+          - Canal detectado automaticamente pela conta conectada
+          - Refresh token automático e validação periódica da sessão
+          - Chat moderno via EventSub WebSocket
+          - Modo manual antigo preservado como compatibilidade
+          - Personagens animados no overlay do OBS
           - Interface e vozes em PT-BR
           "@
           gh release view $tag *> $null
